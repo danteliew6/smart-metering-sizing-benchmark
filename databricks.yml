@@ -1,0 +1,49 @@
+# ============================================================================
+# Smart-metering sizing benchmark - Databricks Asset Bundle
+# ----------------------------------------------------------------------------
+# Implements the customer use cases behind two Databricks cost models (ANZ and USA
+# smart-metering platforms) as runnable notebooks, runs each as its own job on
+# serverless and/or classic compute, and records runtime + billed DBUs so the
+# sizing assumptions (minutes per run, cluster counts, serverless DBU rating) can
+# be checked against measurements.
+#
+# Deploy:   databricks bundle deploy -t dev -p <profile>
+# Generate: databricks bundle run gen_data_anz -t dev ; databricks bundle run land_files_anz -t dev
+# Run all:  databricks bundle run bench_all_anz -t dev   (and bench_all_usa)
+# Report:   databricks bundle run report -t dev   (billing system tables lag a few hours)
+# ============================================================================
+bundle:
+  name: smart-metering-sizing-benchmark
+
+variables:
+  catalog:
+    description: Unity Catalog catalog that holds the benchmark schemas (needs CREATE SCHEMA).
+    default: dante_classic_stable_catalog
+  schema_anz:
+    description: Schema for the ANZ benchmark (synthetic data, results, landing volume).
+    default: sm_bench_anz
+  schema_usa:
+    description: Schema for the USA benchmark.
+    default: sm_bench_usa
+  n_interval_meters:
+    description: Meters reporting 5-minute interval data in the benchmark (the model extrapolates from this).
+    default: "100000"
+  n_platform_meters_anz:
+    description: All platform meters for the ANZ benchmark (drives conversation logs and the register).
+    default: "600000"
+  history_days:
+    description: Days of interval / conversation history generated.
+    default: "7"
+  spark_version:
+    description: Runtime for the classic job clusters.
+    default: 17.3.x-scala2.13
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://fevm-dante-classic-stable.cloud.databricks.com

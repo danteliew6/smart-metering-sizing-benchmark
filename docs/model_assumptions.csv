@@ -1,0 +1,19 @@
+market,use_case,job_key,notebook_step,variant,batches,compute_in_model,sku,model_nodes_at_scale,node_equiv_dbu_per_hr,minutes_per_run,runs_per_day,scale_basis,scale_meters,benchmark_meters,confidence,note
+anz,interval_ingestion,ingest_interval_anz_serverless_1batch,autoloader_availableNow,serverless,1,Jobs Serverless,jobs_serverless,5,1,3,96,interval,1000000,100000,placeholder,Triggered every 15 min; model counts 1 driver + 4 workers per 1M interval meters
+anz,interval_ingestion,ingest_interval_anz_classic_1p3_backlog,autoloader_availableNow,classic-m5d.xlarge-1+3,8,Jobs Classic,jobs_classic,5,1,1440,1,interval,1000000,100000,original assumption,Always-on alternative: 1 driver + 4 workers per 1M interval meters
+anz,conversation_ingestion,ingest_conversation_anz_serverless_1batch,autoloader_availableNow,serverless,1,Jobs Serverless,jobs_serverless,2,1,2,96,platform,6000000,600000,placeholder,Triggered every 15 min (customer update); 2 VMs at every tier
+anz,register_sync,anz_register_sync,merge,serverless,,Jobs Serverless,jobs_serverless,4,1,7.5,1,platform,6000000,600000,estimate,Daily; original light-batch midpoint
+anz,poor_comms,anz_poor_comms,rank_and_categorise,serverless,,Jobs Serverless,jobs_serverless,4,1,45,1,platform,6000000,600000,derived from original sizing,Daily; original health job 30-60 min
+anz,billing,anz_billing,billing_aggregates,serverless,,Jobs Serverless,jobs_serverless,4,1,7.5,1,platform,6000000,600000,derived from original sizing,Daily; 5-10 min
+anz,voltage_excursions,anz_voltage_excursions,excursions_one_day,serverless,,Jobs Serverless,jobs_serverless,4,1,45,1,interval,1000000,100000,derived from original sizing,Daily; original health job 30-60 min for 1M meters
+usa,interval_ingestion,ingest_interval_usa_classic_1p3_backlog,autoloader_availableNow,classic-m5d.xlarge-1+3,8,Jobs Classic,jobs_classic,5,1,1440,1,interval,1000000,100000,original sizing line,Always-on; 1 driver + 4 workers per 1M meters
+usa,transformer_aggregation,usa_transformer_aggregation,incremental_5min,serverless,,Jobs Classic,jobs_classic,9,2,1440,1,interval,1000000,100000,original sizing line,Always-on D8ds x 9 at 1M
+usa,transformer_forecast_aggregation,usa_site_forecast,tfa,serverless,,Jobs Serverless,jobs_serverless,4,1,32.5,1,interval,1000000,100000,original sizing line,Daily 20-45 min
+usa,peak_detection_actual,usa_peak_detection,peak_actual_1w_1m_12m,serverless,,Jobs Serverless,jobs_serverless,3,1,22.5,1,interval,1000000,100000,estimate,Daily (original sizing was always-on)
+usa,peak_detection_forecasted,usa_peak_detection,peak_forecast,serverless,,Jobs Serverless,jobs_serverless,4,1,22.5,6,interval,1000000,100000,original sizing line,4-hourly
+usa,health_monitoring,usa_health_monitoring,health_24h,serverless,,Jobs Serverless,jobs_serverless,4,1,45,1,interval,1000000,100000,mapped to original sizing,Daily 30-60 min
+usa,site_forecasts,usa_site_forecast,site_forecast,serverless,,Jobs Serverless,jobs_serverless,10,4,100,1,interval,1000000,100000,original sizing line,D16ds x 10; 70-130 min
+usa,missing_data_estimation,usa_missing_data,estimate_one_day,serverless,,Jobs Classic,jobs_classic,3,1,1440,1,interval,1000000,100000,estimate,Modelled always-on
+usa,ev_detection,usa_ev_pv_detection,ev_detect,serverless,,Jobs Serverless,jobs_serverless,7,2,47.5,1,interval,1000000,100000,original sizing line,L8s x 7; 35-60 min
+usa,pv_detection,usa_ev_pv_detection,pv_detect,serverless,,Jobs Serverless,jobs_serverless,7,2,47.5,1,interval,1000000,100000,original sizing line,L8s x 7; 35-60 min
+usa,outage_detection,usa_outage_detection,outage_full_day,serverless,,Jobs Serverless,jobs_serverless,4,8,120,1,interval,1000000,100000,mapped to original sizing,L32s x 4; 90-150 min
