@@ -47,7 +47,8 @@ The use cases that are continuous in the file (outage detection, EV/PV disaggreg
 batches. They now run as incremental jobs every 5 minutes (`src/38_frequency_sweep.py`, job `usa_frequency_sweep`; fit with `scripts/fit_frequency_model.py`).
 Run time is nearly flat from 200k to 4.9M rows read (about 6-10 s), so cost is dominated by the **fixed per-run start-up charge**, not by data volume - which is why they run as ONE shared job.
 At 5 minutes that is about $894/month of start-up (288 runs/day x ~0.23 DBU, **provisional** until the billed fit lands) plus a few hundred dollars of variable cost at 1M meters.
-Peak detection follows the customer file: actual = daily, forecasted = 4-hourly (switch `Inputs` B14 on the sheet).
+Peak detection follows the customer file and has no continuous option: actual = daily, forecasted = 4-hourly.
+The cost sheet has an execution switch for these five use cases: **Micro-batches** (default, one shared 5-minute job) or **Continuous** (always-on Classic cluster(s), sized by estimate: one shared cluster or five). At 1M meters continuous costs about $4.9k/month against about $1.5k for micro-batches.
 Not costed: running these as streaming queries on the shared always-on cluster, which would avoid per-run start-up but needs a streaming test to size.
 
 ## Benchmark: `usa_end_to_end_workflow`
