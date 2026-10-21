@@ -14,6 +14,7 @@ Everything runs on synthetic data generated in your own workspace. Nothing custo
 | `src/` | Notebooks: data generation, ingestion, ANZ batch use cases, USA analytics use cases, report |
 | `docs/METHODOLOGY.md` | How the benchmark maps to the cost model, and its limits - read this first |
 | `docs/USE_CASE_MAP.md` | Customer use case -> notebook -> model cost line |
+| `docs/WORKFLOWS.md` | USA use-case dependencies and the workflows they combine into (and `usa_end_to_end_workflow`) |
 | `docs/model_assumptions.csv` | What each cost model assumed (nodes, minutes, runs/day, DBU rating) |
 | `docs/RESULTS.md` | Measured results from the reference run |
 

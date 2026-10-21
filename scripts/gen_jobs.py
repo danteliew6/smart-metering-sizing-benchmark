@@ -91,6 +91,42 @@ for key, m, nb, variant, extra in J:
     print(job_yaml(key, m, nb, variant, extra)); print()
 for m in ("anz", "usa"):
     print(orchestrator(m)); print()
+# ----- end-to-end USA workflow: one job, tasks wired with the customer file's dependency column
+WORKFLOW_TASKS = [   # (task key, notebook, depends on, extra params)
+    ("ingest_interval", "10_ingest_interval", [], {"batches": "1"}),
+    ("weather_third_party", "12_ingest_weather_third_party", [], {}),
+    ("missing_data", "34_missing_data_estimation", ["ingest_interval"], {}),
+    ("transformer_aggregation", "30_transformer_aggregation", ["missing_data"], {}),
+    ("health_monitoring", "33_health_monitoring", ["ingest_interval"], {}),
+    ("forecast_training", "37_forecast_training", ["ingest_interval"], {}),
+    ("site_forecast", "31_site_forecast", ["forecast_training"], {}),
+    ("peak_detection", "32_peak_detection", ["transformer_aggregation", "site_forecast"], {}),
+    ("ev_pv_detection", "35_ev_pv_detection", ["ingest_interval"], {}),
+    ("outage_detection", "36_outage_detection", ["ingest_interval"], {}),
+    ("bi_refresh", "24_warehouse_workloads", ["peak_detection", "health_monitoring", "ev_pv_detection", "outage_detection", "weather_third_party"],
+     {"workload": "refresh", "sizes": "small"}),
+]
+
+
+def workflow_job():
+    mk = MARKET["usa"]
+    out = ["    usa_end_to_end_workflow:", "      name: sm-bench-usa-end-to-end-workflow", "      max_concurrent_runs: 1", "      tasks:"]
+    for key, nb, deps, extra in WORKFLOW_TASKS:
+        params = {"catalog": "${var.catalog}", "schema": mk["schema"], "market": "usa", "variant": "serverless-workflow",
+                  "n_interval_meters": "${var.n_interval_meters}", "n_platform_meters": mk["platform"], "n_channels": mk["channels"],
+                  "history_days": "${var.history_days}", "job_id": "{{job.id}}", "job_run_id": "{{job.run_id}}", **extra}
+        if nb == "24_warehouse_workloads":
+            params.update(wh_xsmall="${resources.sql_warehouses.wh_xsmall.id}", wh_small="${resources.sql_warehouses.wh_small.id}",
+                          wh_medium="${resources.sql_warehouses.wh_medium.id}")
+        out += [f"        - task_key: {key}", "          notebook_task:", f"            notebook_path: ../src/{nb}.py", "            base_parameters:"]
+        out += [f"              {k}: \"{v}\"" for k, v in params.items()]
+        if deps:
+            out += ["          depends_on:"] + [f"            - task_key: {d}" for d in deps]
+    return "\n".join(out)
+
+
+print(workflow_job()); print()
+
 print("""    report:
       name: sm-bench-report
       max_concurrent_runs: 1

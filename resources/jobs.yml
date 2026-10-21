@@ -936,6 +936,194 @@ resources:
           depends_on:
             - task_key: usa_ev_pv_detection
 
+    usa_end_to_end_workflow:
+      name: sm-bench-usa-end-to-end-workflow
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: ingest_interval
+          notebook_task:
+            notebook_path: ../src/10_ingest_interval.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+              batches: "1"
+        - task_key: weather_third_party
+          notebook_task:
+            notebook_path: ../src/12_ingest_weather_third_party.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+        - task_key: missing_data
+          notebook_task:
+            notebook_path: ../src/34_missing_data_estimation.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: ingest_interval
+        - task_key: transformer_aggregation
+          notebook_task:
+            notebook_path: ../src/30_transformer_aggregation.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: missing_data
+        - task_key: health_monitoring
+          notebook_task:
+            notebook_path: ../src/33_health_monitoring.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: ingest_interval
+        - task_key: forecast_training
+          notebook_task:
+            notebook_path: ../src/37_forecast_training.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: ingest_interval
+        - task_key: site_forecast
+          notebook_task:
+            notebook_path: ../src/31_site_forecast.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: forecast_training
+        - task_key: peak_detection
+          notebook_task:
+            notebook_path: ../src/32_peak_detection.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: transformer_aggregation
+            - task_key: site_forecast
+        - task_key: ev_pv_detection
+          notebook_task:
+            notebook_path: ../src/35_ev_pv_detection.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: ingest_interval
+        - task_key: outage_detection
+          notebook_task:
+            notebook_path: ../src/36_outage_detection.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+          depends_on:
+            - task_key: ingest_interval
+        - task_key: bi_refresh
+          notebook_task:
+            notebook_path: ../src/24_warehouse_workloads.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-workflow"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+              workload: "refresh"
+              sizes: "small"
+              wh_xsmall: "${resources.sql_warehouses.wh_xsmall.id}"
+              wh_small: "${resources.sql_warehouses.wh_small.id}"
+              wh_medium: "${resources.sql_warehouses.wh_medium.id}"
+          depends_on:
+            - task_key: peak_detection
+            - task_key: health_monitoring
+            - task_key: ev_pv_detection
+            - task_key: outage_detection
+            - task_key: weather_third_party
+
     report:
       name: sm-bench-report
       max_concurrent_runs: 1
