@@ -661,6 +661,25 @@ resources:
               job_id: "{{job.id}}"
               job_run_id: "{{job.run_id}}"
 
+    usa_forecast_training:
+      name: sm-bench-usa-forecast-training
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: usa_forecast_training
+          notebook_task:
+            notebook_path: ../src/37_forecast_training.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+
     usa_peak_detection:
       name: sm-bench-usa-peak-detection
       max_concurrent_runs: 1
@@ -886,11 +905,16 @@ resources:
             job_id: ${resources.jobs.usa_transformer_aggregation_classic.id}
           depends_on:
             - task_key: usa_transformer_aggregation
+        - task_key: usa_forecast_training
+          run_job_task:
+            job_id: ${resources.jobs.usa_forecast_training.id}
+          depends_on:
+            - task_key: usa_transformer_aggregation_classic
         - task_key: usa_peak_detection
           run_job_task:
             job_id: ${resources.jobs.usa_peak_detection.id}
           depends_on:
-            - task_key: usa_transformer_aggregation_classic
+            - task_key: usa_forecast_training
         - task_key: usa_health_monitoring
           run_job_task:
             job_id: ${resources.jobs.usa_health_monitoring.id}

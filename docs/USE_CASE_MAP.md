@@ -13,7 +13,7 @@
 | Voltage excursions | `23_voltage_excursions` / `anz_voltage_excursions` | daily serverless batch, 4 VMs per 1M interval meters |
 | BI dashboards & visuals | `24_warehouse_workloads` (bi, refresh) / `bi_serving_anz`, `bi_refresh_anz` | DBSQL Small/Medium/Large by tier, 3.5 h per workday + daily refresh |
 
-## USA (24 customer use cases grouped into 15 cost lines)
+## USA (24 customer use cases + weekly forecast training, grouped into 16 cost lines)
 | Cost line | Customer use cases covered | Notebook / job |
 |---|---|---|
 | Real-time streaming ingestion | Real-Time Streaming Ingestion | `10_ingest_interval` / `ingest_interval_usa_*` |
@@ -26,4 +26,5 @@
 | Estimation of missing data | Estimation of missing data | `34_missing_data_estimation` / `usa_missing_data` |
 | EV / PV detection | EV detection, disaggregation, charging sessions; PV detection, disaggregation | `35_ev_pv_detection` / `usa_ev_pv_detection` |
 | Outage detection | Outage/restoration detection & alarms | `36_outage_detection` / `usa_outage_detection` |
+| Weekly forecasting model training | Predictive analytics serving the forecasting use cases (customer clarification; not a separate line in the USA file) | `37_forecast_training` / `usa_forecast_training` |
 | BI serving / refresh | BI dashboards & visuals; arbitrary aggregation | `24_warehouse_workloads` / `bi_serving_usa`, `bi_refresh_usa` |

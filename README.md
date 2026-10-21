@@ -1,7 +1,7 @@
 # Smart-metering sizing benchmark (Databricks Asset Bundle)
 
 Runnable implementations of the use cases behind two Databricks cost models for a smart-metering platform
-(an **ANZ** market model with 9 use cases and a **USA** market model with 24), used to **measure** the inputs the models
+(an **ANZ** market model with 9 use cases and a **USA** market model with 24 use cases plus weekly forecast-model training), used to **measure** the inputs the models
 had to estimate: minutes per run, cluster counts per meter tier, and the serverless DBU rating.
 
 Everything runs on synthetic data generated in your own workspace. Nothing customer-specific is included.

@@ -40,6 +40,7 @@ J += [
     ("usa_transformer_aggregation", "usa", "30_transformer_aggregation", "serverless", {}),
     ("usa_transformer_aggregation_classic", "usa", "30_transformer_aggregation", "classic-m5d.2xlarge-1+1", {}),
     ("usa_site_forecast", "usa", "31_site_forecast", "serverless", {}),
+    ("usa_forecast_training", "usa", "37_forecast_training", "serverless", {}),
     ("usa_peak_detection", "usa", "32_peak_detection", "serverless", {}),
     ("usa_health_monitoring", "usa", "33_health_monitoring", "serverless", {}),
     ("usa_missing_data", "usa", "34_missing_data_estimation", "serverless", {}),

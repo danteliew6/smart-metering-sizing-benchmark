@@ -17,3 +17,4 @@ usa,missing_data_estimation,usa_missing_data,estimate_one_day,serverless,,Jobs C
 usa,ev_detection,usa_ev_pv_detection,ev_detect,serverless,,Jobs Serverless,jobs_serverless,7,2,47.5,1,interval,1000000,100000,original sizing line,L8s x 7; 35-60 min
 usa,pv_detection,usa_ev_pv_detection,pv_detect,serverless,,Jobs Serverless,jobs_serverless,7,2,47.5,1,interval,1000000,100000,original sizing line,L8s x 7; 35-60 min
 usa,outage_detection,usa_outage_detection,outage_full_day,serverless,,Jobs Serverless,jobs_serverless,4,8,120,1,interval,1000000,100000,mapped to original sizing,L32s x 4; 90-150 min
+usa,forecast_training,usa_forecast_training,train_weekly,serverless,,Jobs Serverless,jobs_serverless,10,4,100,0.1429,interval,1000000,100000,estimate,Weekly; sized as one day of the original site-forecast run (10 x D16ds-equivalent x 100 min) - replace with the real model's training time

@@ -78,6 +78,14 @@ The model's minutes are roughly 4-40x the projected data-handling time. Most of 
 EV/PV and topology models), which these stand-ins do not include - so the right reading is "data handling is cheap; the model's
 minutes are driven by algorithm cost the customer must supply", not "the model is 10x too high".
 
+## 3b. Weekly forecasting model training  [USA]
+A stand-in per-meter regression (daily harmonics + lag, `applyInPandas`) trained on the 7-day history for 100,000 meters took **159 s**
+(196.6M rows in, 99,500 models out; the 500 never-reporting meters have no data). Training time scales with the window and meter
+count: an 8-week window at 1M meters is about 80x the data, i.e. roughly 3.5 hours at this compute before serverless scales out. The real model
+and training window are unknown, so the cost model sizes training as **one day of the original site-forecast run** (10 x D16ds-equivalent,
+100 min) run 30/7 times a month - about $60/month at the smallest tier and $301/month at 1M meters (+1.7% of total). Replace with the real
+model's training time once it is available. Billed DBUs for this run were not yet in `system.billing.usage` when this was written.
+
 ## 4. Transformer aggregation: always-on or triggered?
 The USA model prices transformer + substation aggregation as an always-on cluster (9 x D8ds at 1M). One 5-minute slot aggregated in **5.2 s serverless /
 8.3 s classic (m5d.2xlarge 1+1)** at 100k meters - a 1.7-2.8% duty cycle of the 300 s window (upper bound 17-28% if slot time scaled
