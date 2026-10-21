@@ -10,7 +10,7 @@ from pyspark.sql import functions as F
 p = common.params(dbutils, {"market": "usa", "n_channels": 21})
 b = common.Bench(spark, p, "missing_data_estimation")
 iv = common.t(p, "interval_readings")
-days = common.day_list(p)
+days = common.data_days(spark, p)
 
 # COMMAND ----------
 with b.step("estimate_one_day") as s:

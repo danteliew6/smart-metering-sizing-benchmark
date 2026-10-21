@@ -12,7 +12,7 @@ from pyspark.sql import functions as F, Window
 p = common.params(dbutils, {"market": "usa", "n_channels": 21})
 b = common.Bench(spark, p, "outage_detection")
 iv, meters = common.t(p, "interval_readings"), common.t(p, "meters")
-day = common.day_list(p)[-1]
+day = common.data_days(spark, p)[-1]
 
 
 def detect(df):

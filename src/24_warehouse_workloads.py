@@ -16,8 +16,8 @@ p = common.params(dbutils, {"workload": "bi", "sizes": "small,medium", "wh_xsmal
 wh = {"xsmall": p["wh_xsmall"], "small": p["wh_small"], "medium": p["wh_medium"]}
 b = common.Bench(spark, p, f"warehouse_{p['workload']}")
 iv, meters, conv = common.t(p, "interval_readings"), common.t(p, "meters"), common.t(p, "conversations")
-day = common.day_list(p)[-1]
-first_day = common.day_list(p)[0]
+day = common.data_days(spark, p)[-1]
+first_day = common.data_days(spark, p)[0]
 kw = dict(catalog=p["catalog"], schema=p["schema"])
 
 QUERIES = {

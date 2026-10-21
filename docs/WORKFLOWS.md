@@ -29,6 +29,7 @@ one cluster, so one dependency chain can span several workflows (cross-workflow 
 | 5 | Forecasting chain | Weekly forecasting model training; Continuous site forecasting; 24 hour forecast snapshots; Peak detection - forecasted | Weekly / daily / 4-hourly | Serverless batch |
 | 6 | DER detection (EV & PV) | EV Detection, Disaggregation, Charging sessions; PV Detection, Disaggregation | Daily (disaggregation continuous in file) | Serverless batch |
 | 7 | Outage detection | Outage/restoration detection & alarms | Continuous in file | Serverless batch |
+| 9 | **5-min micro-batch workflow** | Outage/restoration detection; EV Disaggregation; PV Disaggregation; Read performance & last read (5-min update); Continuous site forecasting (5-min nowcast correction) | Every 5 min | ONE serverless job run every 5 min with five tasks (start-up paid once) |
 | 8 | BI & reporting | Arbitrary aggregation of voltage & load; BI dashboards (serving + daily refresh) | On demand / daily | DBSQL serverless |
 
 Data flow: Streaming core -> {Device health, Transformer load analytics, Forecasting chain, DER detection, Outage detection} -> BI & reporting. Weekly training -> forecasts -> forecasted peak.
@@ -41,7 +42,17 @@ Data flow: Streaming core -> {Device health, Transformer load analytics, Forecas
 * Every other workflow is a presentation grouping: the model sums its members (sequential tasks on equal-size clusters cost the same as separate jobs),
   except that a single job run pays serverless start-up once - which the benchmark below measures.
 
+## 5-minute micro-batches (customer: continuous but flexible, 5 minutes will do)
+The use cases that are continuous in the file (outage detection, EV/PV disaggregation, read performance, site-forecast refresh) were previously costed as daily
+batches. They now run as incremental jobs every 5 minutes (`src/38_frequency_sweep.py`, job `usa_frequency_sweep`; fit with `scripts/fit_frequency_model.py`).
+Run time is nearly flat from 200k to 4.9M rows read (about 6-10 s), so cost is dominated by the **fixed per-run start-up charge**, not by data volume - which is why they run as ONE shared job.
+At 5 minutes that is about $894/month of start-up (288 runs/day x ~0.23 DBU, **provisional** until the billed fit lands) plus a few hundred dollars of variable cost at 1M meters.
+Peak detection follows the customer file: actual = daily, forecasted = 4-hourly (switch `Inputs` B14 on the sheet).
+Not costed: running these as streaming queries on the shared always-on cluster, which would avoid per-run start-up but needs a streaming test to size.
+
 ## Benchmark: `usa_end_to_end_workflow`
 One job, 11 notebook tasks wired with the dependency edges above (ingest -> missing data -> transformer aggregation -> peak detection; ingest -> training -> forecast -> peak detection;
 ingest -> health / EV&PV / outage; all -> BI refresh). All tasks succeeded. Billed DBUs for the job run are compared with the sum of the separate
 per-use-case runs (`docs/results/`), which shows how much the fixed per-run serverless overhead (~0.2-0.25 DBU) shrinks when work shares one run.
+
+> Note: an earlier run of this job (2026-10-21) read an empty day because notebooks derived the latest day from today's date; they now use `common.data_days()` (the days actually in the table). Re-run before relying on its billing.

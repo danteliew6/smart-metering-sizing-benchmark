@@ -127,6 +127,21 @@ def workflow_job():
 
 print(workflow_job()); print()
 
+def sweep_job():
+    mk = MARKET["usa"]
+    params = {"catalog": "${var.catalog}", "schema": mk["schema"], "market": "usa", "variant": "serverless-sweep",
+              "n_interval_meters": "${var.n_interval_meters}", "n_platform_meters": mk["platform"], "n_channels": mk["channels"],
+              "history_days": "${var.history_days}", "job_id": "{{job.id}}", "job_run_id": "{{job.run_id}}",
+              "use_case": "{{job.parameters.use_case}}", "window_minutes": "{{job.parameters.window_minutes}}"}
+    out = ["    usa_frequency_sweep:", "      name: sm-bench-usa-frequency-sweep", "      max_concurrent_runs: 1", "      parameters:",
+           "        - name: use_case", "          default: outage", "        - name: window_minutes", "          default: \"5\"",
+           "      tasks:", "        - task_key: sweep", "          notebook_task:", "            notebook_path: ../src/38_frequency_sweep.py", "            base_parameters:"]
+    out += [f"              {k}: \"{v}\"" for k, v in params.items()]
+    return "\n".join(out)
+
+
+print(sweep_job()); print()
+
 print("""    report:
       name: sm-bench-report
       max_concurrent_runs: 1

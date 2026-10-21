@@ -65,6 +65,13 @@ def day_list(p):
     return [(end - timedelta(days=i)).isoformat() for i in range(p["history_days"], 0, -1)]
 
 
+def data_days(spark, p):
+    """Days actually present in interval_readings (oldest first). Use this in analytics notebooks, NOT day_list():
+    day_list() is relative to today's date, so it drifts away from the generated data once the data is more than a day old."""
+    rows = spark.table(t(p, "interval_readings")).select("reading_date").distinct().orderBy("reading_date").collect()
+    return [r["reading_date"].isoformat() for r in rows]
+
+
 # ----------------------------------------------------------------------------- timing harness
 _RESULT_SCHEMA = T.StructType([
     T.StructField("bench_run_id", T.StringType()), T.StructField("recorded_at", T.TimestampType()),

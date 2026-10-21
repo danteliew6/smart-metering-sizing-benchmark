@@ -13,7 +13,7 @@ from pyspark.sql import functions as F
 p = common.params(dbutils, {"market": "usa", "n_channels": 21})
 b = common.Bench(spark, p, "transformer_aggregation")
 iv, meters = common.t(p, "interval_readings"), common.t(p, "meters")
-day = common.day_list(p)[-1]
+day = common.data_days(spark, p)[-1]
 CAPACITY_KW = 2.45 * 2.2     # nominal transformer rating used for the load-stress ratio
 
 

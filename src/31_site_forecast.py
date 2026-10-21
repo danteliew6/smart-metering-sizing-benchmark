@@ -12,7 +12,7 @@ from pyspark.sql import functions as F
 p = common.params(dbutils, {"market": "usa", "n_channels": 21, "forecast_days": 1})
 b = common.Bench(spark, p, "site_forecasts")
 iv, meters = common.t(p, "interval_readings"), common.t(p, "meters")
-days = common.day_list(p)
+days = common.data_days(spark, p)
 fc = common.t(p, "result_site_forecast")
 
 # COMMAND ----------

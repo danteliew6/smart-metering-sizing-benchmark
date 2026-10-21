@@ -1124,6 +1124,32 @@ resources:
             - task_key: outage_detection
             - task_key: weather_third_party
 
+    usa_frequency_sweep:
+      name: sm-bench-usa-frequency-sweep
+      max_concurrent_runs: 1
+      parameters:
+        - name: use_case
+          default: outage
+        - name: window_minutes
+          default: "5"
+      tasks:
+        - task_key: sweep
+          notebook_task:
+            notebook_path: ../src/38_frequency_sweep.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema_usa}"
+              market: "usa"
+              variant: "serverless-sweep"
+              n_interval_meters: "${var.n_interval_meters}"
+              n_platform_meters: "${var.n_interval_meters}"
+              n_channels: "21"
+              history_days: "${var.history_days}"
+              job_id: "{{job.id}}"
+              job_run_id: "{{job.run_id}}"
+              use_case: "{{job.parameters.use_case}}"
+              window_minutes: "{{job.parameters.window_minutes}}"
+
     report:
       name: sm-bench-report
       max_concurrent_runs: 1

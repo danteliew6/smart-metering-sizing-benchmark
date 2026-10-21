@@ -9,7 +9,7 @@ import common
 p = common.params(dbutils)
 b = common.Bench(spark, p, "voltage_excursions")
 iv = common.t(p, "interval_readings")
-day = common.day_list(p)[-1]
+day = common.data_days(spark, p)[-1]
 lo, hi = common.NOMINAL_V * (1 - common.BAND), common.NOMINAL_V * (1 + common.BAND)
 
 # COMMAND ----------
