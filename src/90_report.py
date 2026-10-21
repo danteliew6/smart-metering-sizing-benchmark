@@ -17,8 +17,9 @@ from pyspark.sql import functions as F, types as T
 dbutils.widgets.text("catalog", "dante_classic_stable_catalog")
 dbutils.widgets.text("schema_anz", "sm_bench_anz")
 dbutils.widgets.text("schema_usa", "sm_bench_usa")
+dbutils.widgets.text("serverless_mult", "1.0")      # keep equal to the cost sheets (Inputs: serverless multiplier); 2.34 = cost-calculator rating
 catalog, schemas = dbutils.widgets.get("catalog"), {"anz": dbutils.widgets.get("schema_anz"), "usa": dbutils.widgets.get("schema_usa")}
-SERVERLESS_MULT = 2.34          # Cost-calculator serverless-node DBU rating vs classic (see docs/RESULTS.md)
+SERVERLESS_MULT = float(dbutils.widgets.get("serverless_mult"))   # serverless-node DBU rating vs classic used by the cost sheets (see docs/RESULTS.md section 1b)
 DBU_RATE = {"jobs_serverless": 0.50, "jobs_classic": 0.30}     # $/DBU used by the Azure Australia East model
 
 here = os.getcwd()

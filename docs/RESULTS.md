@@ -7,6 +7,10 @@ All 30 benchmark jobs succeeded. Raw timings: `docs/results/*_bench_results.csv`
 > **Status: runtimes, throughput, storage and billed DBUs are all measured.** DBUs come from `system.billing.usage` joined on `job_run_id`
 > (`report_model_vs_measured`, exported to `docs/results/`). Billing trailed the runs by ~2 hours.
 
+> **Note on the cost sheets:** both cost sheets default the serverless multiplier to **1.0x** (the original sizing's basis) so numbers stay consistent;
+> the 2.34x figure is kept as a sensitivity input. Section 1b shows that, for triggered interval ingestion, billed DBUs were closer to the 2.34x
+> model than the 1.0x one, so 1.0x is the lower-cost reading. `report_model_vs_measured` uses `serverless_mult` (default 1.0) for its model column.
+
 ## 1. Interval ingestion - minutes per run and cluster counts
 | Compute | Rows | Wall-clock | Rows/second |
 |---|---|---|---|
