@@ -4,10 +4,8 @@ Run on AWS us-east-1, 100,000 interval meters, 7 days of history, serverless job
 serverless SQL warehouses (Small / Medium). ANZ also uses 600,000 platform meters (3.6M conversations/day).
 All 30 benchmark jobs succeeded. Raw timings: `docs/results/*_bench_results.csv`.
 
-> **Status: runtimes, throughput and storage are measured. Billed DBUs are NOT yet in this file.** `system.billing.usage` lagged the runs by
-> ~2 hours when this was written. Run `databricks bundle run report` once it lands (`billed_dbu`, `measured_vs_model` and
-> `effective_dbu_per_hr` in `report_model_vs_measured` fill in), then `python3 scripts/export_results.py` to refresh the CSVs.
-> Until then **nothing below settles the serverless DBU rating (1.0x vs 2.34x)** - that needs billed DBUs.
+> **Status: runtimes, throughput, storage and billed DBUs are all measured.** DBUs come from `system.billing.usage` joined on `job_run_id`
+> (`report_model_vs_measured`, exported to `docs/results/`). Billing trailed the runs by ~2 hours.
 
 ## 1. Interval ingestion - minutes per run and cluster counts
 | Compute | Rows | Wall-clock | Rows/second |
@@ -21,12 +19,38 @@ All 30 benchmark jobs succeeded. Raw timings: `docs/results/*_bench_results.csv`
 
 * **Serverless triggered run**: about 27 s fixed + 5.1 us/row. A 15-minute batch has `meters x 3` rows, so projected run times are
   0.6 min at 0.5M meters, 0.7 at 1M, 1.0 at 2M, 1.5 at 4M and **2.0 at 6M**. The model's 3-minute placeholder is conservative
-  at every tier on wall-clock, assuming serverless scales out linearly. Whether it is conservative on *DBUs* depends on the billed rate (pending).
+  at every tier on wall-clock, assuming serverless scales out linearly. See section 1b for what it costs in DBUs.
 * **Always-on cluster**: required throughput is `meters x 288 / 86,400` = 3.3k rows/s at 1M and 20k rows/s at 6M. A classic 1+1 cluster
   drained a backlog at 21-26k rows/s, and 1+3 was no faster - so the drain was not CPU-bound and the limit is unknown. The model's
   "1 driver + 4 workers per 1M meters" (5 VMs at 1M, 25 at 6M) looks generous, but **do not cut cluster counts on this evidence alone**: the test
   was an `availableNow` drain of only 64 small files at ~446 bytes/row JSON (the original sizing assumed ~0.7 KB). A steady-state streaming test
   with a larger backlog (>=50M rows) is needed first.
+
+## 1b. Billed DBUs - does the serverless rating hold?
+Billed serverless DBUs per run split into a fixed start-up cost and a per-row cost, estimated from the 1-batch and 8-batch runs:
+**0.21 DBU fixed + 1.5e-7 DBU/row (ANZ)** and **0.25 DBU + 1.3e-7 DBU/row (USA)**. A 15-minute batch has `meters x 3` rows. Compared with the model's
+triggered-ingestion DBUs per run (clusters x 2.34 x 3 min):
+
+| Interval meters | Rows/batch | Billed DBU/run (ANZ / USA, extrapolated) | Model at 2.34x | Model if rating were 1.0x |
+|---|---|---|---|---|
+| 0.5M | 1.5M | 0.43 / 0.44 | 0.35 (-19% / -20%) | 0.15 |
+| 1M | 3M | 0.66 / 0.64 | 0.58 (-11% / -9%) | 0.25 |
+| 2M | 6M | 1.12 / 1.02 | 1.05 (-6% / +3%) | 0.45 |
+| 4M | 12M | 2.02 / 1.80 | 1.99 (-2% / +11%) | 0.85 |
+| 6M | 18M | 2.93 / 2.58 | 2.92 (0% / +13%) | 1.25 |
+
+* **The model's 2.34x rating with the 3-minute placeholder matches billed DBUs within about -20% to +13%** (ANZ billed is 0-24% above the model,
+  USA 3-12% below at the larger tiers). Had the rating been 1.0x, the model would understate by 2-3x. For this workload the earlier 1.0x reading (from the original
+  sizing's recorded runs) is not supported.
+* The model slightly **under-states the small tiers** (+24% / +26% at 0.5M) because of the ~0.2 DBU fixed cost per run.
+* **How strong is this?** It rests on two data points per market (300k and 2.4M rows) extrapolated up to 18M rows, assuming serverless
+  scales linearly. It is a good sign, not proof; a direct run at 1M+ meters would confirm it. Note also the match depends on the 3-minute run time
+  and the 2.34x rating together - the *product* is validated, not each factor alone, because serverless jobs do not have a node count.
+* **Other batch jobs:** each serverless run billed 0.2-0.6 DBU at this scale. After removing the ~0.2-0.25 DBU fixed cost and scaling, billed DBUs are
+  about 0.01-0.3x the model's for most lines (e.g. voltage excursions 2.1 vs 7.0, site forecasts 3.4 vs 156, outage 1.7 vs 150), and about 1.0-2.0x for billing aggregates,
+  register sync and conversation ingestion (all small). Same caveat as section 3: stand-in algorithms are a floor.
+* **Not covered:** DBUs on the `warehouse_*` jobs belong to the driver notebook, not the SQL warehouse, so DBSQL cost is not measured here. Classic
+  always-on lines are judged on throughput (section 1), not DBU per run.
 
 ## 2. Conversation ingestion
 Needs 417 rows/s at 6M platform meters. One triggered serverless batch (37,500 rows) took 24.7 s; classic 1+1 drained 300k rows at 4.4k rows/s
@@ -80,5 +104,6 @@ The model's driver for BI is warehouse *uptime hours* (3.5 h/workday), which thi
 ## What this does and does not show
 * Supported: serverless batch wall-clock is small relative to the model's minutes; the 3-minute interval-ingestion placeholder holds at every tier;
   conversation ingestion does not need an always-on cluster on throughput grounds; storage per row is understated by ~3-4x.
-* Not yet supported: any cost/DBU conclusion. The serverless rating (1.0x vs 2.34x) and the DBU cost of each job need billed DBUs.
+* Supported with DBUs: for triggered interval ingestion the model's DBU per run is within about -20% to +13% of billed DBUs at every tier (section 1b); the 1.0x serverless reading is not.
+* Not yet supported: DBSQL (warehouse) cost; any conclusion about the real forecasting / EV / PV / outage algorithms.
 * Not tested: real ML algorithms, continuous-streaming steady state, scale above 100k meters, Azure compute and Azure rates.
