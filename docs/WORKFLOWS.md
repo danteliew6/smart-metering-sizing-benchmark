@@ -29,7 +29,7 @@ one cluster, so one dependency chain can span several workflows (cross-workflow 
 | 5 | Forecasting chain | Weekly forecasting model training; Continuous site forecasting; 24 hour forecast snapshots; Peak detection - forecasted | Weekly / daily / 4-hourly | Serverless batch |
 | 6 | DER detection (EV & PV) | EV Detection, Disaggregation, Charging sessions; PV Detection, Disaggregation | Daily (disaggregation continuous in file) | Serverless batch |
 | 7 | Outage detection | Outage/restoration detection & alarms | Continuous in file | Serverless batch |
-| 9 | **5-min micro-batch workflow** | Outage/restoration detection; EV Disaggregation; PV Disaggregation; Read performance & last read (5-min update); Continuous site forecasting (5-min nowcast correction) | Every 5 min | ONE serverless job run every 5 min with five tasks (start-up paid once) |
+| 9 | **5-min isolated serverless jobs** | Outage/restoration detection; EV Disaggregation; PV Disaggregation; Read performance & last read (5-min update); Continuous site forecasting (5-min nowcast correction) | Every 5 min | Five separate serverless jobs, one per use case, each run every 5 min (each pays its own per-run charge) |
 | 8 | BI & reporting | Arbitrary aggregation of voltage & load; BI dashboards (serving + daily refresh) | On demand / daily | DBSQL serverless |
 
 Data flow: Streaming core -> {Device health, Transformer load analytics, Forecasting chain, DER detection, Outage detection} -> BI & reporting. Weekly training -> forecasts -> forecasted peak.
@@ -48,12 +48,9 @@ batches. They now run as incremental jobs every 5 minutes (`src/38_frequency_swe
 Run time is nearly flat from 200k to 4.9M rows read (about 6-10 s), so cost is dominated by the **fixed per-run start-up charge**, not by data volume - which is why they run as ONE shared job.
 At 5 minutes that is about $894/month of start-up (288 runs/day x ~0.23 DBU, **provisional** until the billed fit lands) plus a few hundred dollars of variable cost at 1M meters.
 Peak detection follows the customer file and has no continuous option: actual = daily, forecasted = 4-hourly.
-The cost sheet has an execution switch for these five use cases: **Continuous** (selected), **Micro-batches**, or **Isolated forecast refresh**.
-* *Continuous / Shared* (selected): all five on ONE always-on cluster - the cheapest continuous layout. Protect latency-critical outage detection with Spark FAIR scheduler pools instead of a separate cluster.
-* *Micro-batches / Shared*: one 5-minute job; by far the cheapest, but not continuous.
-* *Isolated forecast refresh* (outage, read performance, EV/PV continuous; forecast refresh as its own micro-batch job) was proposed as a recommendation and **should not be used**: that single task pays the whole per-run start-up, so it costs more than all-continuous in 6 of 7 tiers and $1.9k-$3.3k/month more than micro-batches.
-* $/month at Pilot / Target: micro-batches 895 / 1,517; continuous (shared) 2,272 / 4,923; isolated forecast refresh 2,788 / 4,864. Continuous cluster sizes are estimates.
-* Open: whether serverless tasks in one job run share compute (micro-batch start-up is assumed paid once) is not yet verified in billing.
+Each of these five runs as its **own isolated serverless job** every 5 minutes (no continuous option, no shared job or cluster), so every use case carries its full cost on its own line.
+At 1M meters that is about $0.9k/month per job (about $1.5k for forecast refresh, whose horizon rows scale with meters), $5.1k/month for the five - almost all of it the fixed per-run charge (288 runs/day x ~0.23 DBU x 30 days x $0.45 = ~$894/month per job, provisional). Sharing one job would cut this to about $1.5k/month; running every 15 min instead of 5 would cut it to about $1.7k.
+Open: the 0.23 DBU fixed charge is not yet confirmed by billing for the sweep runs.
 
 Not costed: running these as streaming queries on the shared always-on cluster, which would avoid per-run start-up but needs a streaming test to size.
 
