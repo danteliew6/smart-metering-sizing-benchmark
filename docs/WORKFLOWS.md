@@ -22,7 +22,7 @@ one cluster, so one dependency chain can span several workflows (cross-workflow 
 
 | # | Workflow | Includes | Cadence | Compute in the cost model |
 |---|---|---|---|---|
-| 1 | **Streaming core** | Six workloads, listed below: Real-Time Streaming Ingestion; Estimation of missing data; Transformer Aggregation & Load Stress Score; Transformer Loading alarms (W/A/C); Substation Aggregation; Voltage alarms | Continuous (5-min) | One shared always-on Classic cluster (switch `Shared`/`Separate`) |
+| 1 | **Streaming core** | Six workloads, listed below: Real-Time Streaming Ingestion; Estimation of missing data; Transformer Aggregation & Load Stress Score; Transformer Loading alarms (W/A/C); Substation Aggregation; Voltage alarms | Continuous (5-min) | One shared always-on Classic cluster (fixed assumption; three separate clusters would cost about $757/month more) |
 | 2 | External data feeds | Weather data ingestion; 3rd party meter data ingestion | 4-hourly / daily | Serverless batch |
 | 3 | Device health & comms | Read performance, BSU & last read; Communications Failure alarm | 5-min (flexible) / daily | Daily serverless batch |
 | 4 | Transformer load analytics | Transformer Loading alarms (Info); Reverse Power Flow; Peak detection - actual | Daily / 4-hourly | Serverless batch |
@@ -35,7 +35,7 @@ one cluster, so one dependency chain can span several workflows (cross-workflow 
 Data flow: Streaming core -> {Device health, Transformer load analytics, Forecasting chain, DER detection, Outage detection} -> BI & reporting. Weekly training -> forecasts -> forecasted peak.
 
 ## Streaming core: what is on the shared cluster
-In `Shared` mode these six customer use cases are all continuous and each feeds the next, so they run as streaming queries on one always-on cluster.
+These six customer use cases are all continuous and each feeds the next, so they run as streaming queries on one always-on cluster.
 The Google Sheet's `Workload Breakdown` tab itemises them with the rationale and assumptions for combining them, and splits the cluster's size and cost by component.
 
 | # | Customer use case | Component | Capacity in the model |
