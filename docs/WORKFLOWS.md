@@ -29,7 +29,7 @@ one cluster, so one dependency chain can span several workflows (cross-workflow 
 | 5 | Forecasting chain | Weekly forecasting model training; Continuous site forecasting; 24 hour forecast snapshots; Peak detection - forecasted | Weekly / daily / 4-hourly | Serverless batch |
 | 6 | DER detection (EV & PV) | EV Detection, Charging sessions; PV Detection (daily); EV and PV Disaggregation run in the merged 5-min job (row 9) | Daily | Serverless batch |
 | 7 | Outage detection | Outage/restoration detection & alarms | Continuous in file | Serverless batch |
-| 9 | **5-min isolated serverless jobs** | Outage/restoration detection; EV & PV Disaggregation (one merged job); Read performance & last read (5-min update); Continuous site forecasting (5-min nowcast correction) | Every 5 min | Four separate serverless jobs, each run every N min (latency switch, default 5) |
+| 9 | **5-min isolated serverless jobs** | Outage/restoration detection; EV & PV Disaggregation (one merged job); Read performance & last read (5-min update); Continuous site forecasting (5-min nowcast correction) | Every 5 min | Four separate serverless jobs, each run every 5 min (Inputs B14 switch: micro-batch or continuous 24/7) |
 | 8 | BI & reporting | Arbitrary aggregation of voltage & load; BI dashboards (serving + daily refresh) | On demand / daily | DBSQL serverless |
 
 Data flow: Streaming core -> {Device health, Transformer load analytics, Forecasting chain, DER detection, Outage detection} -> BI & reporting. Weekly training -> forecasts -> forecasted peak.
@@ -58,7 +58,7 @@ Cluster size = 1 driver + workers whose total vCPU equals the three components' 
   except that a single job run pays serverless start-up once - which the benchmark below measures.
 
 ## 5-minute micro-batches (customer: continuous but flexible, 5 minutes will do)
-The use cases that are continuous in the file (outage detection, EV/PV disaggregation, read performance, site-forecast refresh) run as incremental jobs every N minutes (Inputs B14 latency switch: 5 / 15 / 30 / 60, default 5). EV and PV disaggregation are merged into one job, since both work on small flagged subsets of the same reads.
+The use cases that are continuous in the file (outage detection, EV/PV disaggregation, read performance, site-forecast refresh) run either as 5-minute serverless micro-batches (default) or as 24/7 always-on Classic clusters, chosen with the Inputs B14 switch. EV and PV disaggregation are merged into one job, since both work on small flagged subsets of the same reads.
 Peak detection follows the customer file and has no continuous option: actual = daily, forecasted = 4-hourly.
 Each of these four runs as its **own isolated serverless job**, triggered every 5 minutes. A triggered micro-batch does not run for the length of the interval: it starts, processes the last 5 minutes of data and stops, so it bills only for that short run. The cost sheet prices it like every other serverless line (VMs x minutes per run x DBU/hr x multiplier x $/DBU x runs per month) with an assumed **1 minute per run** (start-up plus processing; editable). That is about $130/month per job at 2 VMs and $518/month for the four at small tiers, rising to about $970/month at 1M meters where outage detection and forecast refresh need 5 VMs. Running every 15 minutes instead would cost about $324/month at 1M meters. The frequency-sweep notebook and fit script remain in the repo for measuring real per-run charges, but the cost model does not use them: the 1-minute run time is a logical assumption.
 
